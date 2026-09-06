@@ -1,4 +1,4 @@
-import { ChevronRight, ChevronLeft, ArrowRight, Sparkles, Check, Bell, BookMarked, UserX } from 'lucide-react'
+import { ChevronRight, ChevronLeft, ArrowRight, Check, Bell, BookMarked, UserX } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useMutation } from '@tanstack/react-query'

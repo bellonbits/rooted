@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/ui/Logo'
 import { PageTransition } from '@/components/layout/PageTransition'
-import { Sparkles, Menu, X, ChevronRight, BookOpen, Compass, HeartHandshake, Smile, Info, Mail } from 'lucide-react'
+import { Sparkles, Menu, X, ChevronRight, BookOpen, Compass, Smile, Info, Mail } from 'lucide-react'
 
 const LINKS = [
   { label: 'How It Works', path: '/how-it-works', icon: Compass },
