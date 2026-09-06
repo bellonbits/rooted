@@ -47,8 +47,8 @@ export function Splash() {
         className="relative z-10 flex flex-col items-center"
       >
         <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-white/10 shadow-2xl backdrop-blur-md ring-1 ring-white/20">
-          <div className="scale-125">
-            <Logo variant="white" tagline={false} />
+          <div className="scale-150">
+            <Logo variant="white" withWordmark={false} />
           </div>
         </div>
 
