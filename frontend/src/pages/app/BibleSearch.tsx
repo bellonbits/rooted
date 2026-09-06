@@ -43,8 +43,8 @@ export function BibleSearch() {
   const navigateToVerse = (ref: string) => {
     const parts = ref.split(' ')
     const bookName = parts.slice(0, -1).join('-').toLowerCase()
-    const chapter = parts[parts.length - 1].split(':')[0]
-    navigate(`/app/bible/${bookName}/${chapter}`)
+    const [chapter, verse] = parts[parts.length - 1].split(':')
+    navigate(`/app/bible/${bookName}/${chapter}${verse ? `?verse=${verse}` : ''}`)
   }
 
   return (

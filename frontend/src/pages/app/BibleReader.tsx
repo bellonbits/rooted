@@ -19,6 +19,8 @@ import {
   MapPin,
   Check,
   BookOpen,
+  ListOrdered,
+  ChevronDown,
 } from 'lucide-react'
 import { BOOKS } from '@/constants/bible'
 import { bibleService } from '@/services/bible.service'
@@ -51,9 +53,10 @@ export function BibleReader() {
   const addReply = useBibleStore((s) => s.addReply)
 
   const [fontSizeIdx, setFontSizeIdx] = useState(1)
-  const [selectedVerse, setSelectedVerse] = useState<number>(3)
+  const [selectedVerse, setSelectedVerse] = useState<number>(Number(searchParams.get('verse')) || 3)
   const [discussionOpen, setDiscussionOpen] = useState<boolean>(searchParams.get('discuss') === 'true')
   const [copiedToast, setCopiedToast] = useState(false)
+  const [verseJumpOpen, setVerseJumpOpen] = useState(false)
 
   // TTS State
   const [ttsState, setTtsState] = useState<TTSState>('idle')
@@ -86,6 +89,21 @@ export function BibleReader() {
       ttsService.stop()
     }
   }, [book, chapterNum])
+
+  // Deep-link support: jump straight to ?verse=N once the chapter loads
+  useEffect(() => {
+    const target = Number(searchParams.get('verse'))
+    if (!data || !target) return
+    setSelectedVerse(target)
+    const el = document.getElementById(`verse-${target}`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [data, searchParams])
+
+  const handleJumpToVerse = (verseNum: number) => {
+    setSelectedVerse(verseNum)
+    setVerseJumpOpen(false)
+    document.getElementById(`verse-${verseNum}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 
   const currentVerseRef = `${bookName} ${chapterNum}:${selectedVerse}`
 
@@ -370,6 +388,46 @@ export function BibleReader() {
                 <p className="mt-1 text-xs text-indigo-400 font-medium">
                   {data.translationName} · Live HelloAO API
                 </p>
+              )}
+
+              {/* Jump to a specific verse */}
+              {data && data.verses.length > 0 && (
+                <div className="relative mt-4 flex justify-center">
+                  <button
+                    onClick={() => setVerseJumpOpen((v) => !v)}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors shadow-2xs',
+                      verseJumpOpen
+                        ? 'bg-purple-700 text-white'
+                        : 'bg-purple-50 text-purple-800 hover:bg-purple-100',
+                    )}
+                  >
+                    <ListOrdered className="h-3.5 w-3.5" />
+                    <span>Verse {selectedVerse}</span>
+                    <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', verseJumpOpen && 'rotate-180')} />
+                  </button>
+
+                  {verseJumpOpen && (
+                    <div className="absolute top-full z-30 mt-2 w-72 max-h-64 overflow-y-auto rounded-2xl bg-white p-3 shadow-xl ring-1 ring-purple-100 animate-fade-in">
+                      <div className="grid grid-cols-6 gap-1.5">
+                        {data.verses.map((v) => (
+                          <button
+                            key={v.verse}
+                            onClick={() => handleJumpToVerse(v.verse)}
+                            className={cn(
+                              'flex aspect-square items-center justify-center rounded-lg text-xs font-bold transition-colors',
+                              v.verse === selectedVerse
+                                ? 'bg-purple-700 text-white'
+                                : 'bg-purple-50/60 text-indigo-900 hover:bg-purple-100',
+                            )}
+                          >
+                            {v.verse}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
