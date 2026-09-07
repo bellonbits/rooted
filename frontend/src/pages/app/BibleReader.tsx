@@ -54,6 +54,7 @@ export function BibleReader() {
 
   const [fontSizeIdx, setFontSizeIdx] = useState(1)
   const [selectedVerse, setSelectedVerse] = useState<number>(Number(searchParams.get('verse')) || 3)
+  const [actionBarOpen, setActionBarOpen] = useState(true)
   const [discussionOpen, setDiscussionOpen] = useState<boolean>(searchParams.get('discuss') === 'true')
   const [copiedToast, setCopiedToast] = useState(false)
   const [verseJumpOpen, setVerseJumpOpen] = useState(false)
@@ -101,6 +102,7 @@ export function BibleReader() {
 
   const handleJumpToVerse = (verseNum: number) => {
     setSelectedVerse(verseNum)
+    setActionBarOpen(true)
     setVerseJumpOpen(false)
     document.getElementById(`verse-${verseNum}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
@@ -116,6 +118,7 @@ export function BibleReader() {
 
   const handleSelectVerse = (verseNum: number) => {
     setSelectedVerse(verseNum)
+    setActionBarOpen(true)
     toggleHighlight(chapterKey, verseNum)
   }
 
@@ -492,7 +495,7 @@ export function BibleReader() {
                         {v.text}{' '}
 
                         {/* Floating Context Action Bar on Selected Verse */}
-                        {isSelected && (
+                        {isSelected && actionBarOpen && (
                           <span
                             onClick={(e) => e.stopPropagation()}
                             className="absolute -top-12 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-1.5 rounded-2xl bg-white px-2.5 py-1.5 shadow-xl ring-1 ring-purple-100 animate-fade-in text-indigo-900"
@@ -536,6 +539,16 @@ export function BibleReader() {
                               title="Share Verse"
                             >
                               <Share2 className="h-4 w-4" />
+                            </button>
+
+                            {/* ✕ Close action bar */}
+                            <button
+                              onClick={() => setActionBarOpen(false)}
+                              className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-purple-50 text-indigo-400 transition-colors"
+                              title="Close"
+                              aria-label="Close verse actions"
+                            >
+                              <X className="h-4 w-4" />
                             </button>
                           </span>
                         )}
