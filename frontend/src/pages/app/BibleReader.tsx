@@ -227,16 +227,25 @@ export function BibleReader() {
               <ChevronLeft className="h-5 w-5" />
             </button>
 
-            {/* Translation Button */}
+            {/* Book/Chapter Button -> opens the chapter picker */}
             <button
-              onClick={() => navigate('/app/bible/translations')}
+              onClick={() => navigate(`/app/bible/${book}`)}
               className="flex items-center gap-1.5 text-xs font-black tracking-widest uppercase text-indigo-950 hover:text-purple-700 transition-colors rounded-lg px-2 py-1 hover:bg-purple-50"
-              title="Change translation (HelloAO live catalog)"
+              title="Pick a different chapter"
             >
               <BookOpen className="h-4 w-4 text-purple-600 hidden sm:block" />
               <span>{bookName} {chapterNum}</span>
-              <span className="text-purple-300">·</span>
-              <span className="text-purple-700">{translation}</span>
+            </button>
+
+            <span className="text-purple-300">·</span>
+
+            {/* Translation Button */}
+            <button
+              onClick={() => navigate('/app/bible/translations')}
+              className="text-xs font-black tracking-widest uppercase text-purple-700 hover:text-purple-900 transition-colors rounded-lg px-2 py-1 hover:bg-purple-50"
+              title="Change translation (HelloAO live catalog)"
+            >
+              {translation}
             </button>
           </div>
 
