@@ -84,66 +84,74 @@ export function BibleChapterPicker() {
           ))}
         </div>
 
-        {/* Responsive Grid of Chapter Selectors:
-            5 cols on mobile, 8 on tablet, 10 on desktop, 12 on large monitors */}
-        <div className="mt-6 rounded-3xl bg-white p-6 sm:p-8 shadow-xs ring-1 ring-purple-100/70">
-          <h2 className="text-xs font-black uppercase tracking-wider text-indigo-400 mb-5">
-            Select Chapter to Read
-          </h2>
-          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-3">
-            {chapters.map((n) => (
-              <button
-                key={n}
-                onClick={() => handleSelectChapter(n)}
-                className={cn(
-                  'flex aspect-square items-center justify-center rounded-2xl text-sm font-bold ring-1 transition-all hover:shadow-md active:scale-95',
-                  selectedChapter === n
-                    ? 'bg-purple-700 text-white ring-purple-700 shadow-md'
-                    : 'bg-purple-50/50 text-indigo-950 ring-purple-100/80 hover:bg-purple-700 hover:text-white hover:ring-purple-700',
-                )}
-              >
-                {n}
-              </button>
-            ))}
+        {/* Chapter picker + verse picker: stacked on mobile, side-by-side on large screens */}
+        <div className="mt-6 rounded-3xl bg-white p-6 sm:p-8 shadow-xs ring-1 ring-purple-100/70 lg:flex lg:gap-8">
+          {/* Chapter Picker (sidebar on desktop, grid on top on mobile) */}
+          <div className="lg:w-56 lg:shrink-0">
+            <h2 className="text-xs font-black uppercase tracking-wider text-indigo-400 mb-5">
+              Select Chapter to Read
+            </h2>
+            <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-4 gap-3 lg:max-h-[560px] lg:overflow-y-auto lg:pr-1">
+              {chapters.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => handleSelectChapter(n)}
+                  className={cn(
+                    'flex aspect-square items-center justify-center rounded-2xl text-sm font-bold ring-1 transition-all hover:shadow-md active:scale-95',
+                    selectedChapter === n
+                      ? 'bg-purple-700 text-white ring-purple-700 shadow-md'
+                      : 'bg-purple-50/50 text-indigo-950 ring-purple-100/80 hover:bg-purple-700 hover:text-white hover:ring-purple-700',
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Verse picker for the selected chapter */}
-          {selectedChapter !== null && (
-            <div className="mt-6 rounded-2xl bg-purple-50/40 p-5 ring-1 ring-purple-100 animate-fade-in">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-indigo-400">
-                  Select Verse in Chapter {selectedChapter}
-                </h3>
-                <button
-                  onClick={() => navigate(`/app/bible/${book}/${selectedChapter}`)}
-                  className="text-xs font-bold text-purple-700 hover:underline"
-                >
-                  Read whole chapter →
-                </button>
+          <div className="mt-6 lg:mt-0 lg:flex-1 lg:border-l lg:border-purple-100/70 lg:pl-8">
+            {selectedChapter !== null ? (
+              <div className="rounded-2xl bg-purple-50/40 p-5 ring-1 ring-purple-100 animate-fade-in">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-indigo-400">
+                    Select Verse in Chapter {selectedChapter}
+                  </h3>
+                  <button
+                    onClick={() => navigate(`/app/bible/${book}/${selectedChapter}`)}
+                    className="text-xs font-bold text-purple-700 hover:underline"
+                  >
+                    Read whole chapter →
+                  </button>
+                </div>
+
+                {versesLoading && (
+                  <div className="flex items-center justify-center gap-2 py-8 text-sm font-semibold text-indigo-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading verses…
+                  </div>
+                )}
+
+                {!versesLoading && chapterData && (
+                  <div className="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-12 gap-2">
+                    {chapterData.verses.map((v) => (
+                      <button
+                        key={v.verse}
+                        onClick={() => navigate(`/app/bible/${book}/${selectedChapter}?verse=${v.verse}`)}
+                        className="flex aspect-square items-center justify-center rounded-xl bg-white text-xs font-bold text-indigo-900 ring-1 ring-purple-100 transition-all hover:bg-purple-700 hover:text-white hover:ring-purple-700 active:scale-95"
+                      >
+                        {v.verse}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-
-              {versesLoading && (
-                <div className="flex items-center justify-center gap-2 py-8 text-sm font-semibold text-indigo-400">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading verses…
-                </div>
-              )}
-
-              {!versesLoading && chapterData && (
-                <div className="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-12 gap-2">
-                  {chapterData.verses.map((v) => (
-                    <button
-                      key={v.verse}
-                      onClick={() => navigate(`/app/bible/${book}/${selectedChapter}?verse=${v.verse}`)}
-                      className="flex aspect-square items-center justify-center rounded-xl bg-white text-xs font-bold text-indigo-900 ring-1 ring-purple-100 transition-all hover:bg-purple-700 hover:text-white hover:ring-purple-700 active:scale-95"
-                    >
-                      {v.verse}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+            ) : (
+              <div className="hidden h-full min-h-[200px] items-center justify-center text-center text-sm font-medium text-indigo-400 lg:flex">
+                Select a chapter to see its verses
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
