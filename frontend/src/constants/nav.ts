@@ -15,7 +15,7 @@ export const APP_NAV: NavItem[] = [
 export const SIDEBAR_PRIMARY_NAV: NavItem[] = [
   { label: 'Home', path: '/app', icon: 'home' },
   { label: 'Bible', path: '/app/bible', icon: 'bible' },
-  { label: 'Today’s Journey', path: '/app/journey', icon: 'journey', badge: '65%' },
+  { label: 'Today’s Journey', path: '/app/journey', icon: 'journey' },
   { label: 'Reading Plans', path: '/app/plans', icon: 'plans' },
   { label: 'Discover', path: '/app/discover', icon: 'discover' },
 ]

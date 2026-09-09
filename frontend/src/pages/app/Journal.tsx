@@ -1,76 +1,44 @@
 import { useState } from 'react'
 import { Feather, Calendar, Check } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/Button'
-
-type JournalEntry = {
-  id: string
-  date: string
-  verse: string
-  highlight: string
-  learning: string
-  prayer: string
-}
-
-const INITIAL_ENTRIES: JournalEntry[] = [
-  {
-    id: '1',
-    date: 'September 4, 2026',
-    verse: 'Romans 8:28',
-    highlight: 'All things work together for good to those who love God and are called according to His purpose.',
-    learning: 'God is weaving even the hardest seasons of life into a tapestry of redemption. I do not need to control the outcome; I just need to walk in obedience.',
-    prayer: 'Lord, give me faith to trust your sovereign timing when I cannot see the horizon.',
-  },
-  {
-    id: '2',
-    date: 'September 2, 2026',
-    verse: 'Psalm 23:1–3',
-    highlight: 'The Lord is my shepherd; I shall not want. He leads me beside still waters.',
-    learning: 'Stillness is not wasted time. True spiritual strength is born out of abiding quietly with Jesus.',
-    prayer: 'Teach my soul to rest in your presence today.',
-  },
-]
+import { journalService } from '@/services/journal.service'
 
 export function Journal() {
-  const [entries, setEntries] = useState<JournalEntry[]>(() => {
-    try {
-      const saved = localStorage.getItem('rooted_user_journal_entries')
-      return saved ? JSON.parse(saved) : INITIAL_ENTRIES
-    } catch {
-      return INITIAL_ENTRIES
-    }
+  const queryClient = useQueryClient()
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ['journal-entries'],
+    queryFn: journalService.list,
   })
+
   const [highlight, setHighlight] = useState('')
   const [learning, setLearning] = useState('')
   const [prayer, setPrayer] = useState('')
   const verse = 'Mark 4:14 · The Parable of the Sower'
   const [savedSuccess, setSavedSuccess] = useState(false)
 
+  const { mutate: saveEntry, isPending: isSaving } = useMutation({
+    mutationFn: journalService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journal-entries'] })
+      setHighlight('')
+      setLearning('')
+      setPrayer('')
+      setSavedSuccess(true)
+      setTimeout(() => setSavedSuccess(false), 3000)
+    },
+  })
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
     if (!highlight && !learning && !prayer) return
 
-    const newEntry: JournalEntry = {
-      id: Date.now().toString(),
-      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    saveEntry({
       verse: verse || "Today's Scripture",
       highlight: highlight || 'Quiet reflection on God’s Word.',
       learning: learning || 'Grateful for God’s guidance and patience.',
       prayer: prayer || 'Lord, keep my heart soft and receptive.',
-    }
-
-    const updated = [newEntry, ...entries]
-    setEntries(updated)
-    try {
-      localStorage.setItem('rooted_user_journal_entries', JSON.stringify(updated))
-    } catch {
-      // ignore
-    }
-
-    setHighlight('')
-    setLearning('')
-    setPrayer('')
-    setSavedSuccess(true)
-    setTimeout(() => setSavedSuccess(false), 3000)
+    })
   }
 
   return (
@@ -152,8 +120,8 @@ export function Journal() {
             </span>
           )}
           <div className="ml-auto">
-            <Button type="submit">
-              Save Reflection
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? 'Saving…' : 'Save Reflection'}
             </Button>
           </div>
         </div>
@@ -164,6 +132,8 @@ export function Journal() {
         <h3 className="font-serif text-xl font-bold text-indigo-900">
           Previous Entries ({entries.length})
         </h3>
+
+        {isLoading && <p className="text-sm text-indigo-400">Loading your journal…</p>}
 
         <div className="space-y-4">
           {entries.map((entry) => (

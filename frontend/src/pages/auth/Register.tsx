@@ -76,25 +76,54 @@ export function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [agreed, setAgreed] = useState(false)
-  const { setToken, setUser } = useAuthStore()
+  const { setSession, setUser } = useAuthStore()
+  const [confirmEmailSent, setConfirmEmailSent] = useState(false)
 
   const passwordsMatch = confirmPassword.length === 0 || password === confirmPassword
   const canSubmit = agreed && password === confirmPassword && confirmPassword.length > 0 && name.trim().length > 0 && email.trim().length > 0
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: async () => {
-      const token = await authService.register(name, email, password)
-      setToken(token)
+      const session = await authService.register(name, email, password)
+      if (!session) {
+        // Project has "Confirm email" enabled — no session until the user clicks the emailed link.
+        return null
+      }
+      setSession(session)
       const user = await userService.me()
       setUser(user)
+      return session
     },
-    onSuccess: () => navigate('/app'),
+    onSuccess: (session) => {
+      if (session) navigate('/app')
+      else setConfirmEmailSent(true)
+    },
   })
 
   function onSubmit(e: FormEvent) {
     e.preventDefault()
     if (!canSubmit) return
     mutate()
+  }
+
+  if (confirmEmailSent) {
+    return (
+      <AuthLayout subtitle="Join ROOTED and grow deeper in God's Word">
+        <div className="p-7 text-center">
+          <h2 className="font-serif text-2xl font-bold text-white mb-3 tracking-tight">Check your email</h2>
+          <p className="text-sm text-purple-200/70">
+            We sent a confirmation link to <span className="font-semibold text-white">{email}</span>. Click it to
+            finish creating your account, then sign in.
+          </p>
+          <Link
+            to="/login"
+            className="mt-6 inline-flex items-center gap-2 font-semibold text-white hover:text-purple-200 transition-colors"
+          >
+            Back to Sign In <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </AuthLayout>
+    )
   }
 
   return (

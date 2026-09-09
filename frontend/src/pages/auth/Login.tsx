@@ -32,17 +32,17 @@ export function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const { setToken, setUser, continueAsGuest } = useAuthStore()
+  const { setSession, setUser, continueAsGuest } = useAuthStore()
 
-  function skipAsGuest() {
-    continueAsGuest()
+  async function skipAsGuest() {
+    await continueAsGuest()
     navigate('/app')
   }
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: async () => {
-      const token = await authService.login(email, password)
-      setToken(token)
+      const session = await authService.login(email, password)
+      setSession(session)
       const user = await userService.me()
       setUser(user)
     },

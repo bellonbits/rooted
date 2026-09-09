@@ -1,70 +1,28 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  CheckCircle2,
-  BookOpen,
-  HelpCircle,
-  Feather,
-  HandHeart,
-  ArrowLeft,
-  Sparkles,
-} from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { CheckCircle2, ArrowLeft, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { JOURNEY_STEPS } from '@/constants/journeySteps'
+import { journeyService } from '@/services/journey.service'
+import { useTodaysJourneyProgress } from '@/hooks/useTodaysJourneyProgress'
+
+const TODAY_LABEL = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
 
 export function TodaysJourney() {
   const navigate = useNavigate()
-  const [completedSteps, setCompletedSteps] = useState<number[]>([1, 2])
+  const queryClient = useQueryClient()
+  const { completedIds, percent } = useTodaysJourneyProgress()
 
-  const steps = [
-    {
-      id: 1,
-      num: '01',
-      title: 'Read',
-      passage: 'Mark 4:1–20',
-      description: 'The Parable of the Sower and its divine meaning.',
-      icon: BookOpen,
-      actionLabel: 'Open Scripture Reader',
-      actionUrl: '/app/bible/mark/4',
-    },
-    {
-      id: 2,
-      num: '02',
-      title: 'Understand',
-      passage: 'The Secret of the Seed',
-      description: 'What is Jesus teaching about the receptivity of our hearts?',
-      icon: HelpCircle,
-      actionLabel: 'Discuss with ROOTED AI',
-      actionUrl: '/app/ai',
-    },
-    {
-      id: 3,
-      num: '03',
-      title: 'Reflect',
-      passage: 'Personal Application',
-      description: 'What is God showing you about your own soil today?',
-      icon: Feather,
-      actionLabel: 'Write in Journal',
-      actionUrl: '/app/journal',
-    },
-    {
-      id: 4,
-      num: '04',
-      title: 'Pray',
-      passage: 'Stillness & Surrender',
-      description: 'Spend quiet moments surrendering your desires to the Lord.',
-      icon: HandHeart,
-      actionLabel: 'Enter Prayer Room',
-      actionUrl: '/app/prayer',
-    },
-  ]
+  const { mutate: setStepCompleted } = useMutation({
+    mutationFn: (vars: { id: number; completed: boolean }) =>
+      journeyService.setStepCompleted(vars.id, vars.completed),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todays-journey-completions'] }),
+  })
 
-  const toggleComplete = (id: number) => {
-    setCompletedSteps((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    )
-  }
-
-  const progressPercent = Math.round((completedSteps.length / steps.length) * 100)
+  const { mutate: completeAll } = useMutation({
+    mutationFn: () => journeyService.setAllCompleted(JOURNEY_STEPS.map((s) => s.id)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todays-journey-completions'] }),
+  })
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 md:px-8 space-y-8">
@@ -87,7 +45,7 @@ export function TodaysJourney() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-100 pb-6">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-purple-600">
-              Today&apos;s Journey · September 5
+              Today&apos;s Journey · {TODAY_LABEL}
             </p>
             <h1 className="mt-1 font-serif text-3xl sm:text-4xl font-bold text-indigo-900">
               Grow in faith.
@@ -100,7 +58,7 @@ export function TodaysJourney() {
           <div className="flex flex-col items-start sm:items-end">
             <div className="flex items-baseline gap-1.5">
               <span className="font-serif text-3xl font-bold text-purple-700">
-                {progressPercent}%
+                {percent}%
               </span>
               <span className="text-xs uppercase font-semibold text-indigo-400">Complete</span>
             </div>
@@ -108,7 +66,7 @@ export function TodaysJourney() {
             <div className="mt-2 h-2.5 w-40 overflow-hidden rounded-full bg-indigo-100">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-coral-500 to-coral-400 transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
+                style={{ width: `${percent}%` }}
               />
             </div>
           </div>
@@ -116,8 +74,8 @@ export function TodaysJourney() {
 
         {/* Steps List */}
         <div className="mt-8 space-y-4">
-          {steps.map((step) => {
-            const isDone = completedSteps.includes(step.id)
+          {JOURNEY_STEPS.map((step) => {
+            const isDone = completedIds.includes(step.id)
             const StepIcon = step.icon
 
             return (
@@ -132,7 +90,7 @@ export function TodaysJourney() {
                 <div className="flex items-center justify-between p-6">
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => toggleComplete(step.id)}
+                      onClick={() => setStepCompleted({ id: step.id, completed: !isDone })}
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
                         isDone
                           ? 'bg-purple-600 text-white shadow-xs'
@@ -179,14 +137,9 @@ export function TodaysJourney() {
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-purple-100 pt-6">
           <div className="flex items-center gap-2 text-xs text-indigo-500">
             <Sparkles className="h-4 w-4 text-purple-600" />
-            <span>Today&apos;s Journey is <strong>{progressPercent}% Complete</strong>. Well done!</span>
+            <span>Today&apos;s Journey is <strong>{percent}% Complete</strong>. Well done!</span>
           </div>
-          <Button
-            size="sm"
-            onClick={() => {
-              setCompletedSteps([1, 2, 3, 4])
-            }}
-          >
+          <Button size="sm" onClick={() => completeAll()}>
             Mark All Completed ✓
           </Button>
         </div>

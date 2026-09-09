@@ -36,8 +36,8 @@ export function Personalize() {
     },
   })
 
-  function skipAsGuest() {
-    continueAsGuest()
+  async function skipAsGuest() {
+    await continueAsGuest()
     navigate('/app')
   }
 

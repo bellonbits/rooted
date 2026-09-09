@@ -51,8 +51,8 @@ export function OnboardingIntro() {
     }
   }
 
-  function skipAsGuest() {
-    continueAsGuest()
+  async function skipAsGuest() {
+    await continueAsGuest()
     navigate('/app')
   }
 

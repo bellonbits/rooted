@@ -27,6 +27,7 @@ import {
   type NavItem,
 } from '@/constants/nav'
 import { useUIStore } from '@/store/uiStore'
+import { useTodaysJourneyProgress } from '@/hooks/useTodaysJourneyProgress'
 import { cn } from '@/utils/cn'
 
 const ICON_MAP: Record<NavItem['icon'], typeof Home> = {
@@ -47,6 +48,8 @@ const ICON_MAP: Record<NavItem['icon'], typeof Home> = {
 }
 
 function NavLinksList({ onNavClick }: { onNavClick?: () => void }) {
+  const { percent: journeyPercent } = useTodaysJourneyProgress()
+
   return (
     <>
       {/* Nav groups container */}
@@ -57,8 +60,9 @@ function NavLinksList({ onNavClick }: { onNavClick?: () => void }) {
             Navigation
           </p>
           <div className="flex flex-col gap-1">
-            {SIDEBAR_PRIMARY_NAV.map(({ label, path, icon, badge }) => {
+            {SIDEBAR_PRIMARY_NAV.map(({ label, path, icon }) => {
               const Icon = ICON_MAP[icon]
+              const badge = icon === 'journey' && journeyPercent > 0 ? `${journeyPercent}%` : undefined
               return (
                 <NavLink
                   key={path}

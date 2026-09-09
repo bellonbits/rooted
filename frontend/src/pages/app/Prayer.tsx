@@ -26,7 +26,6 @@ export function Prayer() {
   const isGuest = useAuthStore((s) => s.isGuest)
   const [topic, setTopic] = useState<string | null>(null)
   const [content, setContent] = useState('')
-  const [joined, setJoined] = useState<string[]>([])
 
   const queryClient = useQueryClient()
   const { data: prayers } = useQuery({
@@ -54,9 +53,11 @@ export function Prayer() {
     save()
   }
 
-  function toggleJoin(id: string) {
-    setJoined((prev) => (prev.includes(id) ? prev.filter((j) => j !== id) : [...prev, id]))
-  }
+  const { mutate: toggleJoin } = useMutation({
+    mutationFn: (vars: { id: string; joined: boolean }) =>
+      prayerService.toggleIntercession(vars.id, vars.joined),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['prayer'] }),
+  })
 
   return (
     <div>
@@ -98,30 +99,27 @@ export function Prayer() {
 
         {prayers && prayers.length > 0 && (
           <div className="mt-6 flex flex-col gap-3">
-            {prayers.map((p) => {
-              const isJoined = joined.includes(p.id)
-              return (
-                <div key={p.id} className="rounded-3xl bg-warm-card p-4 shadow-sm">
-                  <div className="mb-2 flex items-center justify-between">
-                    <p className="text-xs font-semibold text-forest-800">{p.topic}</p>
-                    <p className="text-[11px] text-ink-500">{new Date(p.createdAt).toLocaleDateString()}</p>
-                  </div>
-                  <p className="text-[13.5px] italic leading-relaxed text-ink-700">{p.content}</p>
-                  <div className="mt-3 flex items-center justify-end">
-                    <button
-                      onClick={() => toggleJoin(p.id)}
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium',
-                        isJoined ? 'border-forest-800 bg-forest-800 text-cream-50' : 'border-forest-900/20 text-forest-800',
-                      )}
-                    >
-                      <Heart className="h-3.5 w-3.5" fill={isJoined ? 'currentColor' : 'none'} />
-                      Praying for you
-                    </button>
-                  </div>
+            {prayers.map((p) => (
+              <div key={p.id} className="rounded-3xl bg-warm-card p-4 shadow-sm">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-semibold text-forest-800">{p.topic}</p>
+                  <p className="text-[11px] text-ink-500">{new Date(p.createdAt).toLocaleDateString()}</p>
                 </div>
-              )
-            })}
+                <p className="text-[13.5px] italic leading-relaxed text-ink-700">{p.content}</p>
+                <div className="mt-3 flex items-center justify-end">
+                  <button
+                    onClick={() => toggleJoin({ id: p.id, joined: !p.joinedByMe })}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium',
+                      p.joinedByMe ? 'border-forest-800 bg-forest-800 text-cream-50' : 'border-forest-900/20 text-forest-800',
+                    )}
+                  >
+                    <Heart className="h-3.5 w-3.5" fill={p.joinedByMe ? 'currentColor' : 'none'} />
+                    Praying for you
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { GraduationCap, CheckCircle2, Clock, ChevronRight } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/Button'
+import { coursesService } from '@/services/courses.service'
 
 type Lesson = {
   id: number
@@ -8,22 +10,33 @@ type Lesson = {
   title: string
   scripture: string
   duration: string
-  completed: boolean
 }
 
 const LESSONS: Lesson[] = [
-  { id: 1, num: '01', title: 'Who is God?', scripture: 'Genesis 1:1, Psalm 103', duration: '15 min', completed: true },
-  { id: 2, num: '02', title: 'Who is Jesus?', scripture: 'John 1:1–14, Colossians 1:15–20', duration: '20 min', completed: true },
-  { id: 3, num: '03', title: 'What is the Gospel?', scripture: '1 Corinthians 15:1–4, Romans 5:8', duration: '15 min', completed: false },
-  { id: 4, num: '04', title: 'Understanding Grace', scripture: 'Ephesians 2:8–10, Titus 3:4–7', duration: '18 min', completed: false },
-  { id: 5, num: '05', title: 'Talking with God: Prayer', scripture: 'Matthew 6:5–15, Luke 11:1–13', duration: '20 min', completed: false },
-  { id: 6, num: '06', title: 'Reading Scripture', scripture: '2 Timothy 3:16–17, Psalm 119:105', duration: '15 min', completed: false },
-  { id: 7, num: '07', title: 'Living by Faith', scripture: 'Hebrews 11:1–6, Galatians 2:20', duration: '25 min', completed: false },
+  { id: 1, num: '01', title: 'Who is God?', scripture: 'Genesis 1:1, Psalm 103', duration: '15 min' },
+  { id: 2, num: '02', title: 'Who is Jesus?', scripture: 'John 1:1–14, Colossians 1:15–20', duration: '20 min' },
+  { id: 3, num: '03', title: 'What is the Gospel?', scripture: '1 Corinthians 15:1–4, Romans 5:8', duration: '15 min' },
+  { id: 4, num: '04', title: 'Understanding Grace', scripture: 'Ephesians 2:8–10, Titus 3:4–7', duration: '18 min' },
+  { id: 5, num: '05', title: 'Talking with God: Prayer', scripture: 'Matthew 6:5–15, Luke 11:1–13', duration: '20 min' },
+  { id: 6, num: '06', title: 'Reading Scripture', scripture: '2 Timothy 3:16–17, Psalm 119:105', duration: '15 min' },
+  { id: 7, num: '07', title: 'Living by Faith', scripture: 'Hebrews 11:1–6, Galatians 2:20', duration: '25 min' },
 ]
 
 export function DiscipleshipCourses() {
   const navigate = useNavigate()
-  const completedCount = LESSONS.filter((l) => l.completed).length
+  const queryClient = useQueryClient()
+  const { data: completedIds = [] } = useQuery({
+    queryKey: ['lesson-completions'],
+    queryFn: coursesService.completedLessonIds,
+  })
+
+  const { mutate: setCompleted } = useMutation({
+    mutationFn: (vars: { id: number; completed: boolean }) =>
+      coursesService.setLessonCompleted(vars.id, vars.completed),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lesson-completions'] }),
+  })
+
+  const completedCount = completedIds.length
   const progressPercent = Math.round((completedCount / LESSONS.length) * 100)
 
   return (
@@ -67,50 +80,55 @@ export function DiscipleshipCourses() {
 
         {/* Modules List */}
         <div className="mt-6 space-y-3">
-          {LESSONS.map((lesson) => (
-            <div
-              key={lesson.id}
-              className={`flex items-center justify-between rounded-2xl border p-4 sm:p-5 transition-all ${
-                lesson.completed
-                  ? 'border-purple-200/60 bg-purple-50/40'
-                  : 'border-purple-100 bg-white hover:border-purple-300'
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                    lesson.completed
-                      ? 'bg-purple-600 text-white'
-                      : 'border-2 border-indigo-200 text-indigo-600'
-                  }`}
-                >
-                  {lesson.completed ? <CheckCircle2 className="h-4 w-4" /> : lesson.num}
-                </div>
+          {LESSONS.map((lesson) => {
+            const completed = completedIds.includes(lesson.id)
+            return (
+              <div
+                key={lesson.id}
+                className={`flex items-center justify-between rounded-2xl border p-4 sm:p-5 transition-all ${
+                  completed
+                    ? 'border-purple-200/60 bg-purple-50/40'
+                    : 'border-purple-100 bg-white hover:border-purple-300'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setCompleted({ id: lesson.id, completed: !completed })}
+                    aria-label={completed ? 'Mark lesson incomplete' : 'Mark lesson complete'}
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                      completed
+                        ? 'bg-purple-600 text-white'
+                        : 'border-2 border-indigo-200 text-indigo-600 hover:border-purple-400'
+                    }`}
+                  >
+                    {completed ? <CheckCircle2 className="h-4 w-4" /> : lesson.num}
+                  </button>
 
-                <div>
-                  <h3 className="font-serif text-base font-bold text-indigo-900">
-                    {lesson.title}
-                  </h3>
-                  <div className="flex items-center gap-3 text-xs text-indigo-500 mt-0.5">
-                    <span>{lesson.scripture}</span>
-                    <span>·</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> {lesson.duration}
-                    </span>
+                  <div>
+                    <h3 className="font-serif text-base font-bold text-indigo-900">
+                      {lesson.title}
+                    </h3>
+                    <div className="flex items-center gap-3 text-xs text-indigo-500 mt-0.5">
+                      <span>{lesson.scripture}</span>
+                      <span>·</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" /> {lesson.duration}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <Button
-                size="sm"
-                variant={lesson.completed ? 'ghost' : 'secondary'}
-                onClick={() => navigate('/app/bible')}
-              >
-                {lesson.completed ? 'Review' : 'Start'}
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          ))}
+                <Button
+                  size="sm"
+                  variant={completed ? 'ghost' : 'secondary'}
+                  onClick={() => navigate('/app/bible')}
+                >
+                  {completed ? 'Review' : 'Start'}
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>

@@ -1,88 +1,44 @@
 import { useState } from 'react'
 import { HandHeart, CheckCircle2, Plus } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/Button'
-
-type PrayerItem = {
-  id: string
-  text: string
-  category: string
-  date: string
-  answered: boolean
-}
+import { personalPrayerService } from '@/services/personalPrayer.service'
 
 const CATEGORIES = ['Personal', 'Family', 'Church', 'Work & Studies', 'Gratitude', 'Other']
 
-const INITIAL_PRAYERS: PrayerItem[] = [
-  {
-    id: '1',
-    text: 'For my grandmother’s health and recovery in Nairobi, and peace for our family.',
-    category: 'Family',
-    date: 'Sep 3, 2026',
-    answered: false,
-  },
-  {
-    id: '2',
-    text: 'Gratitude for God’s provision of school tuition this semester.',
-    category: 'Gratitude',
-    date: 'Aug 28, 2026',
-    answered: true,
-  },
-  {
-    id: '3',
-    text: 'Guidance and wisdom for the university campus Christian union ministry.',
-    category: 'Church',
-    date: 'Sep 1, 2026',
-    answered: false,
-  },
-]
-
 export function PrayerRoom() {
-  const [prayers, setPrayers] = useState<PrayerItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('rooted_user_prayers')
-      return saved ? JSON.parse(saved) : INITIAL_PRAYERS
-    } catch {
-      return INITIAL_PRAYERS
-    }
+  const queryClient = useQueryClient()
+  const { data: prayers = [], isLoading } = useQuery({
+    queryKey: ['personal-prayers'],
+    queryFn: personalPrayerService.list,
   })
+
   const [newText, setNewText] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('Personal')
   const [activeTab, setActiveTab] = useState<'all' | 'answered'>('all')
 
+  const { mutate: addPrayer } = useMutation({
+    mutationFn: (vars: { text: string; category: string }) =>
+      personalPrayerService.create(vars.text, vars.category),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['personal-prayers'] })
+      setNewText('')
+    },
+  })
+
+  const { mutate: toggleAnswered } = useMutation({
+    mutationFn: (vars: { id: string; answered: boolean }) =>
+      personalPrayerService.toggleAnswered(vars.id, vars.answered),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['personal-prayers'] }),
+  })
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newText.trim()) return
-
-    const item: PrayerItem = {
-      id: Date.now().toString(),
-      text: newText.trim(),
-      category: selectedCategory,
-      date: 'Today',
-      answered: false,
-    }
-
-    const updated = [item, ...prayers]
-    setPrayers(updated)
-    try {
-      localStorage.setItem('rooted_user_prayers', JSON.stringify(updated))
-    } catch {
-      // ignore
-    }
-    setNewText('')
+    addPrayer({ text: newText.trim(), category: selectedCategory })
   }
 
-  const toggleAnswered = (id: string) => {
-    const updated = prayers.map((p) => (p.id === id ? { ...p, answered: !p.answered } : p))
-    setPrayers(updated)
-    try {
-      localStorage.setItem('rooted_user_prayers', JSON.stringify(updated))
-    } catch {
-      // ignore
-    }
-  }
-
-  const filtered =
-    activeTab === 'answered' ? prayers.filter((p) => p.answered) : prayers
+  const filtered = activeTab === 'answered' ? prayers.filter((p) => p.answered) : prayers
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 md:px-8 space-y-10">
@@ -182,6 +138,8 @@ export function PrayerRoom() {
           </div>
         </div>
 
+        {isLoading && <p className="text-sm text-indigo-400">Loading your prayers…</p>}
+
         <div className="space-y-3">
           {filtered.map((prayer) => (
             <div
@@ -194,7 +152,7 @@ export function PrayerRoom() {
             >
               <div className="flex items-start gap-3.5">
                 <button
-                  onClick={() => toggleAnswered(prayer.id)}
+                  onClick={() => toggleAnswered({ id: prayer.id, answered: !prayer.answered })}
                   className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors ${
                     prayer.answered
                       ? 'bg-purple-600 text-white shadow-xs'
@@ -224,7 +182,7 @@ export function PrayerRoom() {
               </div>
 
               <button
-                onClick={() => toggleAnswered(prayer.id)}
+                onClick={() => toggleAnswered({ id: prayer.id, answered: !prayer.answered })}
                 className="text-xs font-semibold text-purple-600 hover:text-purple-800 shrink-0"
               >
                 {prayer.answered ? 'Uncheck' : 'Mark Answered'}

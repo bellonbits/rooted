@@ -398,7 +398,7 @@ export function BibleReader() {
               )}
               {data?.translationName && (
                 <p className="mt-1 text-xs text-indigo-400 font-medium">
-                  {data.translationName} · Live HelloAO API
+                  {data.translationName}
                 </p>
               )}
 
